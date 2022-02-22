@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Tugas Akhirni Ngab</title>
+	</head>
+	<style>
+		#kanvasKu{
+			border: 1px solid #0000FF;
+		}
+	</style>
+	<body>
+		<canvas id="kanvasKu" width="1900" height="945"></canvas>
+		<script>
+            /* 
+                Entire Coding made by Evodius Prabandana
+                Asset :
+                1. Object Sprite by Okta
+                2. Enemies Sprite by Febri
+                3. Map Design by Gilbert
+                4. Character Sprite by Evodius
+            */
+            //Masih Banyak Kurang dari Game ini 
+
+            //Initialization
+			var canvas = document.getElementById("kanvasKu");
+			var ctx = canvas.getContext('2d');
+
+            var startGame = true;
+            var tutorialScreen = false;
+            var inGame = false;
+            var gameOver = false;
+            var endGame = false;
+
+            function reinitialize(){
+                xChar = 10;
+                yChar = 675;
+                currentStateCode = 0;
+                currentStateCodeBoss = 0;
+                healthBar = 100;
+                staminaBar = 100;
+                healthBoss = 20000;
+                xBoss = 1200;
+                yBoss = 250;
+                convertToPercent = healthBoss/(fixedHPBoss/100);
+                calculatePercentBossHP = (1850/100) * convertToPercent;
+                facingRight = true;
+                bossfacingRight = false;
+                shoot = "";
+                delayRegenTime = 0;
+                comboKey = {};
+                corrosiveDmgTime = 0;
+                corrosiveDmgDelay = 0;
+                upTime = true;
+                upTimeDelay = 0;
+                upTimeUlti = true;
+                upTimeUltiDelay = 0;
+                bossUltiDelay = 0;
+                isTeleport = false;
+                bossHitDelay = 0; 
+                bossLeserDelay = 0;
+                cooldDownDash = 0;
+                coolDownDis = 0;
+                clearInterval(counterDis);
+                clearInterval(counterDash);
+                clearInterval(regenInterval);
+                clearInterval(deregenInterval);
+                clearInterval(bossHitInterval);
+                clearInterval(bossComeInterval);
+                clearInterval(bossUltiInterval);
+                clearInterval(bossLeserInterval);
+                clearInterval(delayRegenInterval);
+                clearInterval(corrosiveDmgInterval);
+                clearInterval(corrosiveDmgDelayInterval);
+            }
+
+
+            //Character Build Up Init
+            var xChar = 10; //Lokasi Karakter
+            var yChar = 675; // Lokasi Karakter
+
+            var chX;
+            var chY; 
+
+
+            var facingRight = true; //Boolean untuk mengetahui arah key yang dipencet
+
+            var currentFrame = 0; //Frame persprite
+
+            //Tinggi dan lebar karakter
+            var charWidth = 135; //Lebar 
+            var charHeight = 150; //Tinggi
+
+            var character = [
+                {
+                    state : "idle_default",
+                    url : new Image(),
+                    sheetWidth : 19200,
+                    sheetHeight : 1536,
+                    cols : 25,
+                    rows : 2,
+                    trackRight: 0,
+                    trackLeft: 1 
+                },
+                {
+                    state : "idle_soap",
+                    url : new Image(),
+                    sheetWidth : 4608,
+                    sheetHeight : 1536,
+                    cols : 6,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "idle_disinfektan",
+                    url : new Image(),
+                    sheetWidth : 2304,
+                    sheetHeight : 1536,
+                    cols : 3,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "walk",
+                    url : new Image(),
+                    sheetWidth : 3072,
+                    sheetHeight : 1536,
+                    cols : 4,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "dash",
+                    url : new Image(),
+                    sheetWidth : 5376,
+                    sheetHeight : 1536,
+                    cols : 3,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "att_disinfektan",
+                    url : new Image(),
+                    sheetWidth : 2304,
+                    sheetHeight : 1536,
+                    cols : 3,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "att_soap(prep)",
+                    url : new Image(),
+                    sheetWidth : 4608,
+                    sheetHeight : 1536,
+                    cols : 6,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "jump(prep)",
+                    url : new Image(),
+                    sheetWidth : 2304,
+                    sheetHeight : 1536,
+                    cols : 3,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "jump",
+                    url : new Image(),
+                    sheetWidth : 768,
+                    sheetHeight : 1536,
+                    cols : 1,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "att_soap",
+                    url : new Image(),
+                    sheetWidth : 1536,
+                    sheetHeight : 1536,
+                    cols : 2,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                }
+            ];
+
+            character[0].url.src = "SpriteSheet/Afono-Ch-Idle.png";
+            character[1].url.src = "SpriteSheet/Afono-Ch-Idle-Soap(Weap).png";
+            character[2].url.src = "SpriteSheet/Afono-Ch-Disinfek-Idle.png";
+            character[3].url.src = "SpriteSheet/Afono-Ch-Walk.png";
+            character[4].url.src = "SpriteSheet/Afono-Ch-Dash(Blink)Fast.png";
+            character[5].url.src = "SpriteSheet/Afono-Ch-Disinfek-Shoot.png";
+            character[6].url.src = "SpriteSheet/Afono-Ch-Soap-Ready.png";
+            character[7].url.src = "SpriteSheet/Afono-Ch-Jump(Prep).png";
+            character[8].url.src = "SpriteSheet/Afono-Ch-Jump.png";
+            character[9].url.src = "SpriteSheet/Afono-Ch-Soap-Fire.png";
+
+            var currentStateCode = 0;
+
+			var width = character[currentStateCode].sheetWidth/character[currentStateCode].cols;
+            var height = character[currentStateCode].sheetHeight/character[currentStateCode].rows;
+
+            /* ------------Init Boss---------- */
+            var xBoss = 1200;
+            var yBoss = 250; 
+            const xBossFixed = 1200; //Tandai Lokasi awal
+
+            var bossX;
+            var bossY; 
+
+
+            var bossfacingRight = false;
+
+            var currentFrameBoss = 0; 
+            var bossWidth = 640;  
+            var bossHeight = 800; 
+
+
+            var boss = [
+                {
+                    state : "idle",
+                    url : new Image(),
+                    sheetWidth : 2816,
+                    sheetHeight : 2816,
+                    cols : 2,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "memukul",
+                    url : new Image(),
+                    sheetWidth : 12672,
+                    sheetHeight : 2816,
+                    cols : 9,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "menembak",
+                    url : new Image(),
+                    sheetWidth : 5632,
+                    sheetHeight : 2816,
+                    cols : 4,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "ulti",
+                    url : new Image(),
+                    sheetWidth : 14080,
+                    sheetHeight : 2816,
+                    cols : 10,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                },
+                {
+                    state : "down",
+                    url : new Image(),
+                    sheetWidth : 1408,
+                    sheetHeight : 2816,
+                    cols : 10,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                }
+            ];
+
+            boss[0].url.src = "SpriteSheet/boss_mukul.png";
+            boss[1].url.src = "SpriteSheet/boss_mukul.png";
+            boss[2].url.src = "SpriteSheet/boss_nembak.png";
+            boss[3].url.src = "SpriteSheet/boss_ulti.png";
+            //boss[3].url.src = "SpriteSheet/boss_ulti.png";
+
+            var currentStateCodeBoss = 0;
+
+            var bossFrameWidth = boss[currentStateCodeBoss].sheetWidth/boss[currentStateCodeBoss].cols;
+            var bossFrameHeight = boss[currentStateCodeBoss].sheetHeight/boss[currentStateCodeBoss].rows;
+
+            /* ------------ End Init Boss ------------ */
+
+            /*------------- Init Kroco --------------*/
+            var xKroco = 1200; 
+            var yKroco = 250; 
+
+            var krocoX;
+            var krocoY; 
+
+
+            var krocofacingRight = false;
+
+            var currentFrameKroco = 0; 
+            var krocoWidth = 640;  
+            var krocoHeight = 800; 
+
+            var kroco = [
+                {
+                    state : "idle",
+                    url : new Image(),
+                    sheetWidth : 9856,
+                    sheetHeight : 2816,
+                    cols : 7,
+                    rows : 2,
+                    trackRight : 1,
+                    trackLeft : 0
+                }
+            ];
+
+            kroco[0].url.src = "SpriteSheet/kroco.png";
+
+            var currentStateCodeKroco = 0;
+            var krocoFrameWidth = kroco[currentStateCodeKroco].sheetWidth/kroco[currentStateCodeKroco].cols;
+            var krocoFrameHeight = kroco[currentStateCodeKroco].sheetHeight/kroco[currentStateCodeKroco].rows; 
+
+            /*--------------------------Cooldown Dash, Skill, Character---------------------*/
+            var healthBar = 100;
+            var staminaBar = 100;
+
+            var regenInterval;
+            var deregenInterval;
+
+            function regen(){
+                if(staminaBar < 100){
+                    staminaBar+=1;
+                }    
+            }
+            function deregen(){ 
+                if(statePrep == false){
+                    staminaBar -=1;
+                }
+                if(staminaBar <= 0){
+                    staminaBar = 0;
+                };
+                clearInterval(deregenInterval);
+            }
+
+
+            var cooldDownDash = 0;
+
+            var counterDash;
+
+            function timercdDash(){
+                cooldDownDash-=1;
+                if (cooldDownDash <= 0){
+                    clearInterval(counterDash);
+                    return;
+                }
+            }
+
+            var coolDownDis = 0;
+            var counterDis;
+            function timercdDis(){
+                coolDownDis-=1;
+                if (coolDownDis <= 0){
+                    clearInterval(counterDis);
+                    return;
+                }
+            }
+
+            var shoot;
+            var lengthShootSoap = 25;
+
+            var lengthShootDis = 50;
+
+            /*----------------------------------- Tembakan Sabun dan Disinfektan --------------------------------------*/ 
+            function shootSoapDmg(a){
+                if((xChar + charWidth + lengthShootSoap) >= xBoss + 120 && (xChar - lengthShootSoap) <= xBoss + bossWidth - 120){
+                    if(healthBar + 1 > 100){
+                        healthBar = 100;
+                    }else{
+                        healthBar +=1;
+                    }
+                    healthBoss -= a;
+                }
+            }
+
+            function shootSoap(){
+                ctx.lineWidth = 20;
+                ctx.strokeStyle="#F5B041";
+                if(shoot == "right"){
+                    if(lengthShootSoap <= 300) lengthShootSoap+=50;
+                    ctx.beginPath();
+                    ctx.moveTo(xChar + charWidth, yChar + 62);
+                    ctx.lineTo(xChar + charWidth + lengthShootSoap, yChar + 62);
+                    ctx.stroke();
+                    
+                }
+                else if(shoot == "left"){
+                    if(lengthShootSoap <= 300) lengthShootSoap+=50;
+                    ctx.beginPath();
+                    ctx.moveTo(xChar, yChar + 62);
+                    ctx.lineTo(xChar - lengthShootSoap, yChar + 62);
+                    ctx.stroke();
+                }
+                if((xChar + charWidth + lengthShootSoap) >= xBoss + 120 && (xChar - lengthShootSoap) <= xBoss + bossWidth - 120){
+                    if(healthBar + 1 > 100){
+                        healthBar = 100;
+                    }else{
+                        healthBar +=1;
+                    }
+                    healthBoss -= 10;
+                }
+                
+                deregenInterval = setInterval(deregen,100);
+            }
+
+            function shootDisinfek(){
+                
+                ctx.lineWidth = 20;
+                ctx.strokeStyle="#3498DB";
+                if(facingRight == true){
+                    ctx.beginPath();
+                    ctx.moveTo(xChar + charWidth + lengthShootDis, yChar + 48);
+                    ctx.lineTo(xChar + charWidth, yChar + 58);
+                    ctx.lineTo(xChar + charWidth + lengthShootDis, yChar + 68);
+                    ctx.stroke();
+                }
+                else if(facingRight == false){
+                    ctx.beginPath();
+                    ctx.moveTo(xChar -  lengthShootDis, yChar + 48);
+                    ctx.lineTo(xChar , yChar + 58);
+                    ctx.lineTo(xChar - lengthShootDis, yChar + 68);
+                    ctx.stroke();
+                }
+                if((xChar + charWidth + lengthShootDis) >= xBoss + 120 && (xChar - lengthShootDis) <= xBoss + bossWidth - 120){
+                    healthBoss -= 1000;
+                }
+            }
+
+            /*----------------------------------- End Tembakan Sabun dan Disinfektan --------------------------------------*/             
+
+            /*----------------------------------- Status Bar Character ------------------------------------=*/ 
+            function statusBar(){
+                //Nama
+                /*ctx.lineWidth = 1;
+                ctx.fillStyle = "black";
+                ctx.font = "bold 24px Arial";
+                ctx.fillText("Om Febri", xChar + 15, yChar - 30);*/
+
+
+                //health bar
+                calculatePercentHP = (135/100) * healthBar;
+                ctx.lineWidth = 10;
+                ctx.strokeStyle="green";
+                ctx.beginPath();
+                ctx.lineTo(xChar,yChar - 20);
+                ctx.lineTo(xChar + calculatePercentHP,yChar - 20);
+                ctx.closePath();
+                ctx.stroke();
+
+                //stamina bar
+                calculatePercentSP = (135/100) * staminaBar;
+                ctx.lineWidth = 10;
+                ctx.strokeStyle="yellow";
+                ctx.beginPath();
+                ctx.lineTo(xChar,yChar - 10);
+                ctx.lineTo(xChar + calculatePercentSP,yChar - 10);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            /*----------------------------------- End Status Bar Character ------------------------------------=*/ 
+
+            /*--------------------------End Cooldown Dash, Skill, Character---------------------*/
+
+            /*--------------------------Boss Monster Skill, Status, Area of Observe--------------------------*/
+            var bossPosisiAwal = xBoss;
+            var healthBoss = 20000;// Health Poin boss
+            const fixedHPBoss = 20000; 
+            var visionBoss = 400; //Vision Boss bakal ngejar
+            var hitBoxBoss = 10; //Range Boss bisa ngehit
+            var detectTimeout;
+            var bossHitDelay = 0; //Hit Delay
+            var bossComeInterval;
+            var bossHitInterval;
+            var bossLeserDelay = 0;
+            var bossLeserInterval;
+            var convertToPercent = healthBoss/(fixedHPBoss/100);
+            var calculatePercentBossHP = (1850/100) * convertToPercent;
+
+            function bossCome(){
+                if(convertToPercent > 60){
+                    if(xChar >= (xBoss - visionBoss) && xChar <= (xBoss - hitBoxBoss)){
+                        xBoss -=1;
+                    } else if(xChar >= (xBoss + bossWidth + hitBoxBoss - 120) && xChar <= (xBoss + bossWidth + visionBoss - 120)){
+                        xBoss +=1;      
+                    }
+                    if(xChar >= (xBoss - hitBoxBoss) && xChar <= (xBoss + bossWidth + hitBoxBoss - 120)){
+                        if(xChar > (xBoss - hitBoxBoss) && xChar < ((xBoss + bossWidth/2))){
+                            bossfacingRight = false;                        
+                        }
+                        else if (xChar < (xBoss + bossWidth + hitBoxBoss - 120) && xChar > ((xBoss + bossWidth/2))){
+                            bossfacingRight = true;
+                        }
+                        bossHit();   
+                    }
+                    else {
+                        currentStateCodeBoss = 0;
+                    }
+                }
+                else if(convertToPercent > 20){
+                    currentStateCode = 0;
+                    if(xBoss < xBossFixed || xBoss > xBossFixed){
+                        if(xBoss < xBossFixed){
+                            bossfacingRight = true;
+                            xBoss = xBossFixed;
+                            if(xBoss == xBossFixed){
+                                bossfacingRight = false;
+                            }
+                        }else {
+                            bossfacingRight = false;
+                            xBoss = xBossFixed;
+                        }
+                    }
+                    else{
+                        bossLeser();  
+                    }
+                    
+                }
+                else if(convertToPercent <= 20){
+                    bossUlti();
+                }
+                clearInterval(bossComeInterval);
+            }
+
+            function timerDelayHitPhy(){
+                bossHitDelay-=1;
+                if (bossHitDelay <= 0){
+                    clearInterval(bossHitInterval);
+                    return;
+                }
+            }
+
+
+            function bossHit(){
+                dmgPhysicalBoss = 10;
+                if(bossHitDelay <= 0){
+                    healthBar -= dmgPhysicalBoss; //Health Bar player
+                    currentStateCodeBoss = 1;
+                    currentFrameBoss = 8;
+                    bossHitDelay = 2;
+                    bossHitInterval = setInterval(timerDelayHitPhy,1000);
+                }
+                if(bossHitDelay == 1) {
+                    currentStateCodeBoss = 0;
+                }
+            }
+
+            var upTime = true;
+            var bossUpTimeInterval;
+            var upTimeDelay = 0;
+
+            function upTimeLeser(){     
+                upTimeDelay-=1;
+                if(upTimeDelay <= 0){
+                    upTime = false;
+                    clearInterval(bossUpTimeInterval);
+                    return;
+                }
+                
+            }
+
+            function timerDelayLeser(){
+                bossLeserDelay-=1;
+                ctx.lineWidth = 50;
+                ctx.strokeStyle = "white";
+                ctx.beginPath();
+                ctx.moveTo(xBoss + 300, yBoss + 380);
+                ctx.lineTo(100, yBoss + 380);
+                ctx.closePath();
+                ctx.stroke();
+                if (bossLeserDelay <= 0){
+                    upTime = true;
+                    clearInterval(bossLeserInterval);
+                    return
+                }
+                
+            }
+
+            function bossLeser(){
+                if(upTime == true && upTimeDelay <= 0){
+                    currentStateCodeBoss = 0;
+                    upTimeDelay = 5;
+                    bossUpTimeInterval = setInterval(upTimeLeser,1000);
+                }
+
+                else if(upTime == false && bossLeserDelay <= 0){
+                    currentStateCodeBoss = 2;
+                    healthBar -= 50;
+                    bossLeserDelay = 2;
+                    bossLeserInterval = setInterval(function(){
+                        ctx.lineWidth = 80;
+                        ctx.strokeStyle = "red";
+                        ctx.beginPath();
+                        ctx.moveTo(xBoss + 300, yBoss + 380);
+                        ctx.lineTo(100, yBoss + 380);
+                        ctx.closePath();
+                        ctx.stroke();
+                        timerDelayLeser();
+                    },1000);
+                }
+            }
+
+            var upTimeUlti = true;
+            var upTimeUltiDelay = 0;
+            var bossUpTimeUltiInterval;
+
+            var bossUltiDelay = 0;
+            var bossUltiInterval;
+            var isTeleport = false;
+
+            function upTimeUltiFun(){
+                upTimeUltiDelay-=1;
+                if (upTimeUltiDelay <= 0){
+                    upTimeUlti = false;
+                    isTeleport = true;
+                    clearInterval(bossUpTimeUltiInterval);
+                    return;
+                }
+            }
+
+            function bossUltiFun(){
+                bossUltiDelay-=1;
+                if (bossUltiDelay <= 0){
+                    upTimeUlti = true;
+                    clearInterval(bossUltiInterval);
+                    return;
+                }
+            }
+
+            var corrosiveDmgInterval;
+            var corrosiveDmgDelayInterval;
+            var corrosiveDmgTime = 0;
+            var corrosiveDmgDelay = 0;
+
+            function reducedHPCorrosive(){
+                if(corrosiveDmgTime > 0){
+                    healthBar -= 5;
+                    corrosiveDmgTime -= 1;
+                    return;
+                }else if(corrosiveDmgTime <= 0 ){
+                    clearInterval(corrosiveDmgInterval);
+                    return;
+                }
+            }
+
+            function corrosiveDmgFun(){
+                corrosiveDmgDelay -= 1;
+                corrosiveDmgTime += 4;
+                corrosiveDmgInterval = setInterval(reducedHPCorrosive,1000);
+                if(corrosiveDmgDelay <= 0 ){
+                    clearInterval(corrosiveDmgDelayInterval);
+                    return;
+                }
+            }
+
+
+            function bossUlti(){
+                if(upTimeUlti == true && upTimeUltiDelay <= 0){
+                    currentStateCodeBoss = 0;
+                    upTimeUltiDelay = 3;
+                    bossUpTimeUltiInterval = setInterval(upTimeUltiFun,1000);
+                }
+                else if(upTimeUlti == false && bossUltiDelay <= 0){
+                    if(isTeleport == true) {
+                        if(facingRight == true){
+                            xBoss = xChar - bossWidth;
+                            bossfacingRight = true;
+                        }
+                        else {
+                            xBoss = xChar + charWidth;
+                            bossfacingRight = false;
+                        }
+                        isTeleport = false;
+                    }
+                    currentStateCodeBoss = 3;
+                    bossUltiDelay = 2;
+                    bossUltiInterval = setInterval(bossUltiFun,1000);
+                }
+                if(bossUltiDelay == 1 && corrosiveDmgDelay <=0){
+                    if(xChar < xBoss + bossWidth - 120 || xChar + charWidth > xBoss){
+                        corrosiveDmgDelay = 1;
+                        corrosiveDmgDelayInterval = setInterval(corrosiveDmgFun,1000)
+                    }
+                    
+                }
+            }
+
+            function bossSkill(){
+                bossComeInterval = setInterval(bossCome, 100);
+            }
+
+            function bossStatus(){
+                convertToPercent = healthBoss/(fixedHPBoss/100);
+                calculatePercentBossHP = (1850/100) * convertToPercent;
+               //Text Boss
+                ctx.lineWidth = 1;
+                ctx.fillStyle = "black";
+                ctx.font = "bold 30px Arial";
+                ctx.fillText("Boss (Mutant Virus)", 850, 50);
+
+                //Health Bar
+                ctx.lineWidth = 50;
+                ctx.strokeStyle = "green";
+                ctx.beginPath();
+                ctx.moveTo(50,100);
+                ctx.lineTo(calculatePercentBossHP,100);
+                ctx.closePath();
+                ctx.stroke();
+
+                //Desc Boss
+                ctx.lineWidth = 1;
+                ctx.fillStyle = "black";
+                ctx.font = "bold 30px Arial";
+                ctx.fillText(healthBoss, 950, 110);
+            }
+
+
+            /*--------------------------End Boss Monster Skill, Status, Area of Observe--------------------------*/
+
+
+            /*---------------------------------- Controlling Character -----------------------------------*/
+            var statePrep = true;
+
+            var characterOffset = 5;
+            var comboKey = {};
+
+            window.addEventListener("keydown",keyditekan,true);
+            window.addEventListener("keyup",keydilepas,true);
+
+            function keyditekan(e){
+                code = e.keyCode;
+                comboKey[code] = true;
+                if(comboKey[37] == true){
+                    xChar = xChar - characterOffset;
+                    facingRight = false;
+                    currentStateCode = 3;
+                    if(code == 68 && cooldDownDash <= 0){
+                        currentStateCode = 4;
+                        xChar = xChar + (characterOffset - 200);
+                        cooldDownDash = 3;
+                        counterDash = setInterval(timercdDash,1000);
+                    }
+                    else if(comboKey[32] == true && statePrep == false){
+                        currentStateCode = 9;
+                        xChar = xChar - (0.1);
+                        shoot = "left";
+                    }
+                }
+                else if(comboKey[39] == true){
+                    xChar = xChar + characterOffset;
+                    facingRight = true; 
+                    currentStateCode = 3;
+                    if(comboKey[68] == true && cooldDownDash <= 0){
+                        currentStateCode = 4;
+                        xChar = xChar + (characterOffset + 200);
+                        cooldDownDash = 3;
+                        counterDash = setInterval(timercdDash,1000);
+                    }
+                    else if(comboKey[32] == true && statePrep == false){
+                        currentStateCode = 9;
+                        xChar = xChar + (0.1);
+                        shoot = "right";
+                    }
+                }
+                else if(comboKey[32] == true && statePrep == true){
+                    currentStateCode = 6;
+                    if(currentFrame == 5){
+                        statePrep = false;
+                        currentStateCode = 9;
+                        if(facingRight == true)
+                            shoot = "right";
+                        else
+                            shoot = "left";
+                    }
+                }
+                else if(comboKey[38] == true && yChar == 675){
+                    currentStateCode = 7;
+                }
+                else if(comboKey[70] == true){
+                    if(coolDownDis <= 0){
+                        currentStateCode = 5;
+                        coolDownDis = 1;
+                        shootDisinfek();
+                        counterDis = setInterval(timercdDis,1000);
+                    } else {
+                        currentStateCode = 0;
+                    }
+                    
+                }
+                
+            }
+
+            function keydilepas(e){
+                code = e.keyCode;
+                comboKey[code] = false;
+                if(comboKey[32] == true && (comboKey[37] == false || comboKey[39] == false)){
+                    currentStateCode = 9;
+                }
+                else{
+                    shoot = "";
+                    lengthShootSoap = 100;
+                    idle = [0,1];
+                    currentStateCode = idle[Math.floor(Math.random()*2)];
+                    statePrep = true;                      
+                }
+                
+            }
+
+            /*---------------------------------- End Controlling Character -----------------------------------*/
+
+            /*---------------------------------- Update Frame Spritesheet Char ------------------------------------*/
+            function character_upFrame(){
+                currentFrame = ++currentFrame % character[currentStateCode].cols;
+                chX = currentFrame * width;
+                if(facingRight == true)
+                    chY = character[currentStateCode].trackLeft * height;
+                else
+                    chY = character[currentStateCode].trackRight * height
+            }
+
+             /*---------------------------------- End Update Frame Spritesheet ------------------------------------*/
+
+            /*----------------------------------- Build Character to Canvas ------------------------------------*/
+            function character_build(){
+                character_upFrame();
+                ctx.drawImage(character[currentStateCode].url, chX, chY, width, height, xChar, yChar, charWidth, charHeight );
+            }
+
+            /*----------------------------------- End Build Character to Canvas ------------------------------------*/
+
+
+            /*----------------------------------- UpFrame Boss in Canvas -------------------------------------*/
+
+            function boss_upFrame(){
+                currentFrameBoss = ++currentFrameBoss % boss[currentStateCodeBoss].cols;
+                bossX = currentFrameBoss * bossFrameWidth;
+                if(bossfacingRight == false)
+                    bossY = boss[currentStateCodeBoss].trackLeft * bossFrameHeight;
+                else
+                    bossY = boss[currentStateCodeBoss].trackRight * bossFrameHeight
+            }
+
+
+            /*----------------------------------- End UpFrame Boss in Canvas -------------------------------------*/
+
+
+            /*----------------------------------- Build Boss in Canvas -------------------------------------*/
+            function enem_boss(){
+                boss_upFrame();
+                ctx.drawImage(boss[currentStateCodeBoss].url,bossX,bossY,bossFrameWidth,bossFrameHeight,xBoss, yBoss, bossWidth, bossHeight);
+            }
+            /*----------------------------------- End Build Boss in Canvas -----------------------------------------*/ 
+
+            function charcollides(character, enemies){
+                if(character.chX < enemies.eneX + enemies.width &&
+                character.chX + character.width > enemies.eneX &&
+                character.chY < enemies.eneY + enemies.height &&
+                character.chY + character.height > enemies.eneY) return true;
+            }
+
+            /*----------------- UpFrame Kroco in Canvas --------------*/
+
+
+            /*----------------- End UpFrame Kroco in Canvas --------------*/
+
+            function kroco_upFrame(){
+                
+            }
+
+            /*----------------- Build Kroco in Canvas ------------------*/
+
+            function enemies(){
+                enem = new Image();
+                enem.src = "Enemies/New Piskel (2).gif";
+                enem.onload = function(){
+                    ctx.drawImage(enem,1000, 675, 135, 150);
+                }
+            }
+
+            /*----------------- End Build Kroco in Canvas ------------------*/
+
+            function enemies(){
+                enem = new Image();
+                enem.src = "Enemies/New Piskel (2).gif";
+                enem.onload = function(){
+                    ctx.drawImage(enem,1000, 675, 135, 150);
+                }
+            }
+
+            /*-------------- Regen Delay n Interval --------------*/
+
+            var delayRegenTime = 0;
+
+            var delayRegenInterval;
+
+            function delayRegen(){
+                delayRegenTime-=1;
+                if(delayRegenTime <= 0){
+                    delayRegenTime = 1;
+                    clearInterval(regenInterval);
+                    clearInterval(delayRegenInterval);
+                }
+            }
+
+            /*--------------- End Regen Delay n Interval -------------*/
+
+            /* ---------------------- Referensi/Nyolong dari StackOverflow tentang Button In Canvas ----------------------- */
+
+            function getMousePos(canvas, event) {
+                var rect = canvas.getBoundingClientRect();
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+            }
+
+            function isInside(pos, rect){
+                return pos.x > rect.x && pos.x < rect.x+rect.width && pos.y < rect.y+rect.heigth && pos.y > rect.y
+            }
+
+            var rect = {
+                x:820,
+                y:720,
+                width:200,
+                heigth:100
+            };
+
+            canvas.addEventListener('click', function(evt) {
+                var mousePos = getMousePos(canvas, evt);
+                if (isInside(mousePos,rect) && startGame == true) {
+                    tutorialScreen = true
+                    startGame = false;
+                }
+                else if (isInside(mousePos,rect) && tutorialScreen == true) {
+                    reinitialize();
+                    inGame = true;
+                    tutorialScreen = false;
+                }
+                else if (isInside(mousePos,rect) && gameOver == true) {
+                    reinitialize();
+                    inGame = true;
+                    
+                }
+                else if (isInside(mousePos,rect) && endGame == true) {
+                    reinitialize();
+                    inGame = true;      
+                }    
+            }, false);
+            /* ---------------------- End Referensi/Nyolong dari StackOverflow tentang Button In Canvas ----------------------- */
+
+            //VISUAL (PENGGAMBARAN)
+			function gambarkan(){
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+
+                if(startGame == true){
+                    canvas.style = "background-image: url('Map Desain/Map desain.png'); background-size: 100% 100%;background-repeat: no-repeat";
+
+                    ctx.fillStyle = "rgba(0,0,0,0.75)";
+                    ctx.rect(0,0,canvas.width,canvas.height);
+                    ctx.fill();
+
+                    /* Button Start */
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = "white";
+                    ctx.rect(rect.x,rect.y, rect.width, rect.heigth);
+                    ctx.stroke();
+
+                    ctx.lineWidth = 5;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 36px Arial";
+                    ctx.fillText("Start", 880, 780);
+                    /* End Button Start */
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 56px Arial";
+                    ctx.fillText("Covid - 19 Slugger", 680, 450);
+
+                }
+
+                else if(tutorialScreen == true){
+                    canvas.style = "background-image: url('Map Desain/Map desain.png'); background-size: 100% 100%;background-repeat: no-repeat";
+
+                    ctx.fillStyle = "rgba(0,0,0,0.75)";
+                    ctx.rect(0,0,canvas.width,canvas.height);
+                    ctx.fill();
+
+                    /* Button Start */
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = "white";
+                    ctx.rect(rect.x,rect.y, rect.width, rect.heigth);
+                    ctx.stroke();
+
+                    ctx.lineWidth = 5;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 36px Arial";
+                    ctx.fillText("Start", 880, 780);
+                    /* End Button Start */
+
+
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 56px Arial";
+                    ctx.fillText("Tutorial Game", 730, 150);
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "36px Arial";
+                    ctx.fillText("Arrow Key (Kiri dan Kanan) - Berjalan", 50, 300);
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "36px Arial";
+                    ctx.fillText("Arrow Key + D - Dash", 50, 400);
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "36px Arial";
+                    ctx.fillText("F - Shoot Disinfektan perdetik (Boss Damage Taken = 500)", 50, 500);
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "36px Arial";
+                    ctx.fillText("Space Bar - Shoot Leser Sabun persatu stamina (Life Steal dan Boss Damage Taken 10)", 50, 600);
+                }
+
+                else if(inGame == true){
+                    canvas.style = "background-image: url('Map Desain/Map desain.png'); background-size: 100% 100%;background-repeat: no-repeat";
+                    ctx.save();
+                    character_build();
+                    statusBar();
+                    if(staminaBar > 20 && comboKey[32] == true && statePrep == false){
+                        shootSoap();
+                    }
+
+                    if(comboKey[32] == false){
+                        regenInterval = setInterval(regen,500);
+                        delayRegenInterval = setInterval(delayRegen,100);
+                    } else {
+                        clearInterval(regenInterval);
+                        clearInterval(delayRegenInterval);
+                    }
+
+                    if(healthBar <= 0){
+                        healthBar = 0;
+                        gameOver = true;
+                        inGame = false;
+                    }
+                    if(healthBoss <= 0){
+                        endGame = true;
+                        inGame = false;
+                    }
+                    ctx.restore();
+                    enem_boss();
+                    bossStatus();
+                    bossSkill();
+                    //enemies();  
+                } 
+
+                else if(gameOver == true){
+                    canvas.style = "background-image: url('Map Desain/Map desain.png'); background-size: 100% 100%;background-repeat: no-repeat";
+
+                    ctx.fillStyle = "rgba(0,0,0,0.75)";
+                    ctx.rect(0,0,canvas.width,canvas.height);
+                    ctx.fill();
+
+                    /* Button Start */
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = "white";
+                    ctx.rect(rect.x,rect.y, rect.width, rect.heigth);
+                    ctx.stroke();
+
+                    ctx.lineWidth = 5;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 36px Arial";
+                    ctx.fillText("Try Again", 840, 780);
+                    /* End Button Start */
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 56px Arial";
+                    ctx.fillText("GameOver", 780, 450);
+                }
+
+                else if(endGame == true) {
+                    canvas.style = "background-image: url('Map Desain/Map desain.png'); background-size: 100% 100%;background-repeat: no-repeat";
+
+                    ctx.fillStyle = "rgba(0,0,0,0.75)";
+                    ctx.rect(0,0,canvas.width,canvas.height);
+                    ctx.fill();
+
+                    /* Button Start */
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = "white";
+                    ctx.rect(rect.x,rect.y, rect.width, rect.heigth);
+                    ctx.stroke();
+
+                    ctx.lineWidth = 5;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 36px Arial";
+                    ctx.fillText("Main Lagi", 840, 780);
+                    /* End Button Start */
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 56px Arial";
+                    ctx.fillText("You Win", 810, 350);
+
+                    ctx.lineWidth = 10;
+                    ctx.fillStyle = "white";
+                    ctx.font = "46px Arial";
+                    ctx.fillText("Terima kasih telah bermain game Covid - 19 Slugger", 410, 450);
+                    ctx.fillText("Kami harap Covid - 19 akan segera selesai dengan perjuan kita semua", 210, 525);
+                }
+                              
+			}
+			setInterval(gambarkan, 100);
+		</script>
+	</body>
+</html>
